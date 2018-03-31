@@ -6,7 +6,11 @@
 const readLine = require('readline'),
     util = require('util'),
     debug = require('debug'),
-    events = require('events');
+    events = require('events'),
+    fs = require('fs'),
+    os = require('os'),
+    stat = util.promisify(fs.stat),
+    v8 = require('v8');
 class _events extends events {};
 var e = new _events();
 
@@ -22,6 +26,15 @@ e.on('help', () => {
 e.on('exit', (str) => {
     cli.responders.exit();
 });
+
+e.on('man', (str) => {
+    cli.responders.help();
+});
+
+e.on('stats', (str) => {
+    cli.responders.stats();
+})
+
 // Input processor
 cli.processInput = function(str) {
     str = typeof(str) === 'string' &&
@@ -143,6 +156,51 @@ cli.responders.help = () => {
 
     cli.verticalSpace(1);
     // End with another horizontal line
+    cli.horizontalLine();
+}
+
+//stats
+cli.responders.stats = () => {
+    let stats = {
+        'Load Average': os.loadavg().join(' '),
+        'CPU Count': os.cpus().length,
+        'Free Memory': os.freemem(),
+        'Current Malloced Memory': v8.getHeapStatistics().malloced_memory,
+        'Peak Malloced Memory': v8.getHeapStatistics().peak_malloced_memory,
+        'Allocated Heap Used (%)': Math.round((v8.getHeapStatistics().used_heap_size / v8.getHeapStatistics().total_heap_size) * 100),
+        'Available Heap Allocated (%)': Math.round((v8.getHeapStatistics().total_heap_size / v8.getHeapStatistics().heap_size_limit) * 100),
+        'Uptime': os.uptime() + ' Seconds'
+    };
+    // using promise of util fs.stats
+    callStat = async() => {
+        let stats = await stat('.');
+        console.log(`this directory is owned by ${stat.uid}`);
+    };
+    console.log(process.env.USER);
+    console.log(process.env.TERM);
+    // Create headers for the stats
+    cli.horizontalLine();
+    cli.centered('SYSTEM_ANALYSIS');
+    cli.horizontalLine();
+    cli.verticalSpace(2);
+    callStat();
+    // Layout each stats
+    for (let key in stats) {
+        if (stats.hasOwnProperty(key)) {
+            let value = stats[key];
+            let line = '      \x1b[33m ' + key + '      \x1b[0m';
+            let padding = 60 - line.length;
+            for (i = 0; i < padding; i++) {
+                line += ' ';
+            }
+            line += value;
+            console.log(line);
+            cli.verticalSpace();
+        }
+    }
+
+    // Create a footer for the stats
+    cli.verticalSpace();
     cli.horizontalLine();
 }
 cli.init = function() {
