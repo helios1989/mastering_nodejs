@@ -85,6 +85,7 @@ cli.init = function() {
         // Re-initialize the prompt afterwards
         _interface.prompt();
     })
+
 }
 
 module.exports = cli;
