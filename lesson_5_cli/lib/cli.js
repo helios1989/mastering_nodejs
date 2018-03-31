@@ -173,6 +173,7 @@ cli.init = function() {
     _interface.on('close', function() {
         process.exit(0);
     });
+
 }
 
 module.exports = cli;
