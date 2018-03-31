@@ -78,13 +78,13 @@ cli.init = function() {
     _interface.prompt();
 
     // handle each line of input seperately
-    _interface.on('line', function(str) {
+    _interface.on('line', (str) => {
+
         cli.responders.line(str);
-        // cli.processInput(str);
 
         // Re-initialize the prompt afterwards
         _interface.prompt();
-    })
+    });
 
 }
 
