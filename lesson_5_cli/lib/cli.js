@@ -2,7 +2,7 @@
  * CLI-related task
  */
 
-//Dependencies
+// Dependencies
 const readLine = require('readline'),
     util = require('util'),
     debug = require('debug'),
@@ -10,7 +10,7 @@ const readLine = require('readline'),
 class _events extends events {};
 var e = new _events();
 
-//Instantiate the cli module object
+// Instantiate the cli module object
 const cli = {
     responders: {
 
