@@ -175,5 +175,4 @@ cli.init = function() {
     });
 
 }
-
 module.exports = cli;
