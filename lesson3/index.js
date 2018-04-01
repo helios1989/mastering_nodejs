@@ -12,6 +12,7 @@ const http = require('http'),
     fs = require('fs'),
     _data = require('./lib/data'),
     handlers = require('./lib/handlers'),
+    helpers = require('./lib/helpers'),
     StringDecoder = require('string_decoder').StringDecoder;
 
 // TESTING
@@ -71,33 +72,32 @@ const unifiedServer = (req, res) => {
     req.on('end', function() {
         buffer += decoder.end();
 
-        let chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ?
-            router[trimmedPath] :
-            handlers.notFound;
+        // Check the router for a matching path for a handler. If one is not found, use the notFound handler instead.
+        var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
 
-        let data = {
+        // Construct the data object to send to the handler
+        var data = {
             'trimmedPath': trimmedPath,
             'queryStringObject': queryStringObject,
             'method': method,
             'headers': headers,
-            'payload': buffer
+            'payload': helpers.parseJsonToObject(buffer)
         };
 
-
+        // Route the request to the handler specified in the router
         chosenHandler(data, function(statusCode, payload) {
-            statusCode = typeof(statusCode) == 'number' ?
-                statusCode : 200;
+            console.log('payload is', payload);
+            // Use the status code returned from the handler, or set the default status code to 200
+            statusCode = typeof(statusCode) == 'number' ? statusCode : 200;
 
-            payload = typeof(payload) == 'object' ? payload : {};
+            // var payloadString = JSON.stringify(payload);
 
-            let payloadString = JSON.stringify(payload);
-
+            // Return the response
             res.setHeader('Content-Type', 'application/json');
             res.writeHead(statusCode);
-            res.end(payloadString);
-
-            console.log('returning this response', statusCode, payload);
+            res.end(payload);
+            console.log(trimmedPath, statusCode);
         });
 
-    })
+    });
 }

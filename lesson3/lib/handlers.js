@@ -16,13 +16,11 @@ handlers.ping = (data, callback) => {
 handlers.notFound = (data, callback) => {
     callback(404);
 };
-handlers._users = (data, callback) => {
 
-};
 handlers.users = (data, callback) => {
-    let acceptableMethods = ['post', 'get', 'put', 'delete'];
+    var acceptableMethods = ['post', 'get', 'put', 'delete'];
     if (acceptableMethods.indexOf(data.method) > -1) {
-
+        handlers._users[data.method](data, callback);
     } else {
         callback(405);
     }
@@ -33,9 +31,10 @@ handlers._users = {};
 // Users - post
 // Required data: firstName, lastName, phone, password, tosAgreement
 // Optional data: none
-// users -post
 handlers._users.post = (data, callback) => {
     // Check that all required fields are filled out
+    data.payload = JSON.parse(data.payload);
+
     let firstName = typeof(data.payload.firstName) == 'string' && data.payload.firstName.trim().length > 0 ? data.payload.firstName.trim() : false;
     let lastName = typeof(data.payload.lastName) == 'string' && data.payload.lastName.trim().length > 0 ? data.payload.lastName.trim() : false;
     let phone = typeof(data.payload.phone) == 'string' && data.payload.phone.trim().length == 10 ? data.payload.phone.trim() : false;
@@ -45,42 +44,74 @@ handlers._users.post = (data, callback) => {
     if (firstName && lastName && phone && password && tosAgreement) {
         // Make sure the user doesnt already exist
         _data.read('users', phone, function(err, data) {
-            // Hash the password
-            var hashedPassword = helpers.hash(password);
+            if (err) {
+                // Hash the password
+                let hashedPassword = helpers.hash(password);
 
-            // Create the user object
-            if (hashedPassword) {
-                var userObject = {
-                    'firstName': firstName,
-                    'lastName': lastName,
-                    'phone': phone,
-                    'hashedPassword': hashedPassword,
-                    'tosAgreement': true
-                };
+                // Create the user object
+                if (hashedPassword) {
+                    let userObject = {
+                        'firstName': firstName,
+                        'lastName': lastName,
+                        'phone': phone,
+                        'hashedPassword': hashedPassword,
+                        'tosAgreement': true
+                    };
 
-                // Store the user
-                _data.create('users', phone, userObject, function(err) {
-                    if (!err) {
-                        callback(200);
-                    } else {
-                        console.log(err);
-                        callback(500, { 'Error': 'Could not create the new user' });
-                    }
-                });
+                    // Store the user
+                    _data.create('users', phone, userObject, function(err) {
+                        if (!err) {
+                            console.log('added', phone);
+                            callback(200, { 'data': 'data has been added' });
+                        } else {
+                            console.log(err);
+                            callback(500, { 'Error': 'Could not create the new user' });
+                        }
+                    });
+                } else {
+                    callback(500, { 'Error': 'Could not hash the user\'s password.' });
+                }
+
             } else {
-                callback(500, { 'Error': 'Could not hash the user\'s password.' });
+                // User alread exists
+                callback(400, { 'Error': 'A user with that phone number already exists' });
+            }
+        });
+
+    } else {
+        callback(400, { 'Error': 'Missing required fields' });
+    }
+
+};
+
+
+// Required data: phone
+// Optional data: none
+// @TODO Only let an authenticated user access their object. Dont let them access anyone elses.
+// users-get
+handlers._users.get = (data, callback) => {
+    // Check that phone number is valid
+    var phone = typeof(data.queryStringObject.phone) == 'string' && data.queryStringObject.phone.trim().length == 10 ? data.queryStringObject.phone.trim() : false;
+    if (phone) {
+        // Lookup the user
+        _data.read('users', phone, function(err, data) {
+            if (!err && data) {
+                // Remove the hashed password from the user user object before returning it to the requester
+                delete data.hashedPassword;
+                console.log(data);
+                callback(200, data);
+            } else {
+                callback(404);
             }
         });
     } else {
-        callback(400, { 'Error': 'users that phone number already exist' })
-    };
-};
-// users - put
-handlers._users.put = (data, callback) => {
+        callback(400, { 'Error': 'Missing required field' })
+    }
 
 };
-// users-get
-handlers._users.get = (data, callback) => {
+
+// users - put
+handlers._users.put = (data, callback) => {
 
 };
 // users-delete

@@ -5,7 +5,8 @@
  */
 
 const fs = require('fs'),
-    path = require('path');
+    path = require('path'),
+    helpers = require('./helpers');
 
 let lib = {};
 // Base directory of the data folder
@@ -25,7 +26,7 @@ lib.create = (dir, file, data, callback) => {
                 if (!err) {
                     fs.close(fileDescriptor, function(err) {
                         if (!err) {
-                            // callback(false);
+                            callback(false);
                         } else {
                             callback('Error closing new file');
                         }
@@ -47,6 +48,10 @@ lib.create = (dir, file, data, callback) => {
  */
 lib.read = (dir, file, callback) => {
     fs.readFile(lib.baseDir + dir + '/' + file + '.json', 'utf-8', function(err, data) {
+        // if (!err & data) {
+        //     let parseData = helpers.parseJsonToObject(data);
+        // }
+        console.log('read');
         callback(err, data);
     });
 };
